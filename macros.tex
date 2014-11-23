@@ -2,8 +2,10 @@
 % Use these for any notation where there are multiple options.
 
 %%% Notes and exercise sections
-\newcommand{\sectionNotes}{\phantomsection\section*{Notes}\addcontentsline{toc}{section}{Notes}}
-\newcommand{\sectionExercises}[1]{\phantomsection\section*{Exercises}\addcontentsline{toc}{section}{Exercises}}
+\makeatletter
+\newcommand{\sectionNotes}{\phantomsection\section*{Notes}\addcontentsline{toc}{section}{Notes}\markright{\textsc{\@chapapp{} \thechapter{} Notes}}}
+\newcommand{\sectionExercises}[1]{\phantomsection\section*{Exercises}\addcontentsline{toc}{section}{Exercises}\markright{\textsc{\@chapapp{} \thechapter{} Exercises}}}
+\makeatother
 
 %%% Definitional equality (used infix) %%%
 \newcommand{\jdeq}{\equiv}      % An equality judgment
@@ -28,14 +30,25 @@
 %% begin with an open-brace, or it will be parsed as another argument.
 \makeatletter
 % Currently the macro is configured to produce
-%     {\textstyle\prod}(x:A) \; {\textstyle\prod}(y:B),\ 
+%     {\textstyle\prod}(x:A) \; {\textstyle\prod}(y:B),{\ }
 % in display-math mode, and
 %     \prod_{(x:A)} \prod_{y:B}
 % in text-math mode.
-\def\prd#1{\@ifnextchar\bgroup{\prd@parens{#1}}{\@ifnextchar\sm{\prd@parens{#1}\@eatsm}{\prd@noparens{#1}}}}
+% \def\prd#1{\@ifnextchar\bgroup{\prd@parens{#1}}{%
+%     \@ifnextchar\sm{\prd@parens{#1}\@eatsm}{%
+%         \prd@noparens{#1}}}}
+\def\prd#1{\@ifnextchar\bgroup{\prd@parens{#1}}{%
+    \@ifnextchar\sm{\prd@parens{#1}\@eatsm}{%
+    \@ifnextchar\prd{\prd@parens{#1}\@eatprd}{%
+    \@ifnextchar\;{\prd@parens{#1}\@eatsemicolonspace}{%
+    \@ifnextchar\\{\prd@parens{#1}\@eatlinebreak}{%
+    \@ifnextchar\narrowbreak{\prd@parens{#1}\@eatnarrowbreak}{%
+      \prd@noparens{#1}}}}}}}}
 \def\prd@parens#1{\@ifnextchar\bgroup%
   {\mathchoice{\@dprd{#1}}{\@tprd{#1}}{\@tprd{#1}}{\@tprd{#1}}\prd@parens}%
-  {\mathchoice{\@dprd{#1}}{\@tprd{#1}}{\@tprd{#1}}{\@tprd{#1}}}}
+  {\@ifnextchar\sm%
+    {\mathchoice{\@dprd{#1}}{\@tprd{#1}}{\@tprd{#1}}{\@tprd{#1}}\@eatsm}%
+    {\mathchoice{\@dprd{#1}}{\@tprd{#1}}{\@tprd{#1}}{\@tprd{#1}}}}}
 \def\@eatsm\sm{\sm@parens}
 \def\prd@noparens#1{\mathchoice{\@dprd@noparens{#1}}{\@tprd{#1}}{\@tprd{#1}}{\@tprd{#1}}}
 % Helper macros for three styles
@@ -47,6 +60,20 @@
 \def\dprd#1{\@dprd{#1}\@ifnextchar\bgroup{\dprd}{}}
 \def\@dprd#1{\prod_{(#1)}\,}
 \def\@dprd@noparens#1{\prod_{#1}\,}
+
+% Look through spaces and linebreaks
+\def\@eatnarrowbreak\narrowbreak{%
+  \@ifnextchar\prd{\narrowbreak\@eatprd}{%
+    \@ifnextchar\sm{\narrowbreak\@eatsm}{%
+      \narrowbreak}}}
+\def\@eatlinebreak\\{%
+  \@ifnextchar\prd{\\\@eatprd}{%
+    \@ifnextchar\sm{\\\@eatsm}{%
+      \\}}}
+\def\@eatsemicolonspace\;{%
+  \@ifnextchar\prd{\;\@eatprd}{%
+    \@ifnextchar\sm{\;\@eatsm}{%
+      \;}}}
 
 %%% Lambda abstractions.
 % Each variable being abstracted over is a separate argument.  If
@@ -75,10 +102,18 @@
 %%% Dependent sums %%%
 \def\smsym{\textstyle\sum}
 % Use in the same way as \prd
-\def\sm#1{\@ifnextchar\bgroup{\sm@parens{#1}}{\@ifnextchar\prd{\sm@parens{#1}\@eatprd}{\sm@noparens{#1}}}}
+\def\sm#1{\@ifnextchar\bgroup{\sm@parens{#1}}{%
+    \@ifnextchar\prd{\sm@parens{#1}\@eatprd}{%
+    \@ifnextchar\sm{\sm@parens{#1}\@eatsm}{%
+    \@ifnextchar\;{\sm@parens{#1}\@eatsemicolonspace}{%
+    \@ifnextchar\\{\sm@parens{#1}\@eatlinebreak}{%
+    \@ifnextchar\narrowbreak{\sm@parens{#1}\@eatnarrowbreak}{%
+        \sm@noparens{#1}}}}}}}}
 \def\sm@parens#1{\@ifnextchar\bgroup%
   {\mathchoice{\@dsm{#1}}{\@tsm{#1}}{\@tsm{#1}}{\@tsm{#1}}\sm@parens}%
-  {\mathchoice{\@dsm{#1}}{\@tsm{#1}}{\@tsm{#1}}{\@tsm{#1}}}}
+  {\@ifnextchar\prd%
+    {\mathchoice{\@dsm{#1}}{\@tsm{#1}}{\@tsm{#1}}{\@tsm{#1}}\@eatprd}%
+    {\mathchoice{\@dsm{#1}}{\@tsm{#1}}{\@tsm{#1}}{\@tsm{#1}}}}}
 \def\@eatprd\prd{\prd@parens}
 \def\sm@noparens#1{\mathchoice{\@dsm@noparens{#1}}{\@tsm{#1}}{\@tsm{#1}}{\@tsm{#1}}}
 \def\lsm#1{\@ifnextchar\bgroup{\@lsm{#1}\lsm}{\@@lsm{#1}}}
@@ -93,8 +128,8 @@
 %%% W-types
 \def\wtypesym{{\mathsf{W}}}
 \def\wtype#1{\@ifnextchar\bgroup%
-  {\mathchoice{\@lwtype{#1}}{\@twtype{#1}}{\@twtype{#1}}{\@twtype{#1}}\wtype}%
-  {\mathchoice{\@@lwtype{#1}}{\@twtype{#1}}{\@twtype{#1}}{\@twtype{#1}}}}
+  {\mathchoice{\@twtype{#1}}{\@twtype{#1}}{\@twtype{#1}}{\@twtype{#1}}\wtype}%
+  {\mathchoice{\@twtype{#1}}{\@twtype{#1}}{\@twtype{#1}}{\@twtype{#1}}}}
 \def\lwtype#1{\@ifnextchar\bgroup{\@lwtype{#1}\lwtype}{\@@lwtype{#1}}}
 \def\@lwtype#1{\mathchoice{{\textstyle\mathsf{W}}}{\mathsf{W}}{\mathsf{W}}{\mathsf{W}}({\textstyle #1})\;}
 \def\@@lwtype#1{\mathchoice{{\textstyle\mathsf{W}}}{\mathsf{W}}{\mathsf{W}}{\mathsf{W}}({\textstyle #1}),\ }
@@ -128,16 +163,15 @@
 \newcommand{\fst}{\ensuremath{\proj1}\xspace}
 \newcommand{\snd}{\ensuremath{\proj2}\xspace}
 \newcommand{\ac}{\ensuremath{\mathsf{ac}}\xspace} % not needed in symbol index
-\newcommand{\un}{\ensuremath{\mathsf{un}}\xspace} % not needed in symbol index
 
 %%% recursor and induction
 \newcommand{\rec}[1]{\mathsf{rec}_{#1}}
 \newcommand{\ind}[1]{\mathsf{ind}_{#1}}
-\newcommand{\indidtwo}[1]{\ind{=_{#1}}^\textrm{two}} % two-sided (Martin-Lof) induction principle for identity types
-\newcommand{\indidone}[1]{\ind{=_{#1}}^\textrm{one}} % one-sided (Paulin-Mohring) induction principle for identity types 
+\newcommand{\indid}[1]{\ind{=_{#1}}} % (Martin-Lof) path induction principle for identity types
+\newcommand{\indidb}[1]{\ind{=_{#1}}'} % (Paulin-Mohring) based path induction principle for identity types
 
-%%% Surjective pairing
-\newcommand{\spr}{\ensuremath{\mathsf{sp}}\xspace}
+%%% Uniqueness principles
+\newcommand{\uniq}[1]{\mathsf{uniq}_{#1}}
 
 % Paths in pairs
 \newcommand{\pairpath}{\ensuremath{\mathsf{pair}^{\mathord{=}}}\xspace}
@@ -146,44 +180,40 @@
 
 %%% For quotients %%%
 %\newcommand{\pairr}[1]{{\langle #1\rangle}}
-\newcommand{\pairr}[1]{{(#1)}}
-\usepackage{tikz}
-% \usetikzlibrary{external}
-\usetikzlibrary{matrix,arrows,decorations.pathmorphing,trees}
-\tikzset{fib/.style={->>,font=\scriptsize}}
-\tikzset{cof/.style={right hook->,font=\scriptsize}}
-\tikzset{ar/.style={->,font=\scriptsize}}
-\tikzset{arr/.style={->>,font=\scriptsize}}
-\tikzset{std/.style={matrix of math nodes, row sep=3em, column sep=4em, text height=1.5ex, text depth=0.25ex}}
-\tikzset{description/.style={fill=white,inner sep=2pt}}
-\tikzset{patharrow/.style={=,decorate,decoration={amplitude=.2mm,segment length=2mm,post length=1mm},font=\scriptsize}}
+\newcommand{\pairr}[1]{{\mathopen{}(#1)\mathclose{}}}
+\newcommand{\Pairr}[1]{{\mathopen{}\left(#1\right)\mathclose{}}}
+
 % \newcommand{\type}{\ensuremath{\mathsf{Type}}} % this command is overridden below, so it's commented out
 \newcommand{\im}{\ensuremath{\mathsf{im}}} % the image
+
+%%% 2D path operations
+\newcommand{\leftwhisker}{\mathbin{{\ct}_{\mathsf{l}}}}  % was \ell
+\newcommand{\rightwhisker}{\mathbin{{\ct}_{\mathsf{r}}}} % was r
+\newcommand{\hct}{\star}
 
 %%% modalities %%%
 \newcommand{\modal}{\ensuremath{\ocircle}}
 \let\reflect\modal
 \newcommand{\modaltype}{\ensuremath{\type_\modal}}
-\newcommand{\ism}[1]{\ensuremath{\mathsf{is}_{#1}}}
-\newcommand{\ismodal}{\ism{\modal}}
-\newcommand{\existsmodal}{\ensuremath{{\exists}_{\modal}}}
-\newcommand{\existsmodalunique}{\ensuremath{{\exists!}_{\modal}}}
-\newcommand{\modalfunc}{\textsf{\modal-fun}}
-\newcommand{\Ecirc}{\ensuremath{\mathsf{E}_\modal}}
-\newcommand{\Mcirc}{\ensuremath{\mathsf{M}_\modal}}
-\newcommand{\leftwhisker}{\ct_{\ell}}
-\newcommand{\rightwhisker}{\ct_{r}}
+% \newcommand{\ism}[1]{\ensuremath{\mathsf{is}_{#1}}}
+% \newcommand{\ismodal}{\ism{\modal}}
+% \newcommand{\existsmodal}{\ensuremath{{\exists}_{\modal}}}
+% \newcommand{\existsmodalunique}{\ensuremath{{\exists!}_{\modal}}}
+% \newcommand{\modalfunc}{\textsf{\modal-fun}}
+% \newcommand{\Ecirc}{\ensuremath{\mathsf{E}_\modal}}
+% \newcommand{\Mcirc}{\ensuremath{\mathsf{M}_\modal}}
 \newcommand{\mreturn}{\ensuremath{\eta}}
 \let\project\mreturn
-\newcommand{\mbind}[1]{\ensuremath{\hat{#1}}}
+%\newcommand{\mbind}[1]{\ensuremath{\hat{#1}}}
 \newcommand{\ext}{\mathsf{ext}}
-\newcommand{\mmap}[1]{\ensuremath{\bar{#1}}}
-\newcommand{\mjoin}{\ensuremath{\mreturn^{-1}}}
+%\newcommand{\mmap}[1]{\ensuremath{\bar{#1}}}
+%\newcommand{\mjoin}{\ensuremath{\mreturn^{-1}}}
 % Subuniverse
+\renewcommand{\P}{\ensuremath{\type_{P}}\xspace}
 
 %%% Localizations
-\newcommand{\islocal}[1]{\ensuremath{\mathsf{islocal}_{#1}}\xspace}
-\newcommand{\loc}[1]{\ensuremath{\mathcal{L}_{#1}}\xspace}
+% \newcommand{\islocal}[1]{\ensuremath{\mathsf{islocal}_{#1}}\xspace}
+% \newcommand{\loc}[1]{\ensuremath{\mathcal{L}_{#1}}\xspace}
 
 %%% Identity types %%%
 \newcommand{\idsym}{{=}}
@@ -197,11 +227,11 @@
 \newcommand{\dpath}[4]{#3 =^{#1}_{#2} #4}
 
 %%% singleton
-\newcommand{\sgl}{\ensuremath{\mathsf{sgl}}\xspace}
-\newcommand{\sctr}{\ensuremath{\mathsf{sctr}}\xspace}
+% \newcommand{\sgl}{\ensuremath{\mathsf{sgl}}\xspace}
+% \newcommand{\sctr}{\ensuremath{\mathsf{sctr}}\xspace}
 
 %%% Reflexivity terms %%%
-\newcommand{\reflsym}{{\mathsf{refl}}}
+% \newcommand{\reflsym}{{\mathsf{refl}}}
 \newcommand{\refl}[1]{\ensuremath{\mathsf{refl}_{#1}}\xspace}
 
 %%% Path concatenation (used infix, in diagrammatic order) %%%
@@ -221,13 +251,13 @@
 \let\Trans\trans
 %\newcommand{\Trans}[2]{\ensuremath{{#1}_{*}\left({#2}\right)}\xspace}
 \newcommand{\transf}[1]{\ensuremath{{#1}_{*}}\xspace} % Without argument
-\newcommand{\transport}[2]{\ensuremath{\mathsf{transport}_{*} \: {#2}\xspace}}
+%\newcommand{\transport}[2]{\ensuremath{\mathsf{transport}_{*} \: {#2}\xspace}}
 \newcommand{\transfib}[3]{\ensuremath{\mathsf{transport}^{#1}(#2,#3)\xspace}}
 \newcommand{\Transfib}[3]{\ensuremath{\mathsf{transport}^{#1}\Big(#2,\, #3\Big)\xspace}}
 \newcommand{\transfibf}[1]{\ensuremath{\mathsf{transport}^{#1}\xspace}}
 
 %%% 2D transport
-\newcommand{\transtwo}[2]{\ensuremath{{#1}_{**}\mathopen{}\left({#2}\right)\mathclose{}}\xspace}
+\newcommand{\transtwo}[2]{\ensuremath{\mathsf{transport}^2\mathopen{}\left({#1},{#2}\right)\mathclose{}}\xspace}
 
 %%% Constant transport
 \newcommand{\transconst}[3]{\ensuremath{\mathsf{transportconst}}^{#1}_{#2}(#3)\xspace}
@@ -248,7 +278,7 @@
 
 %%% 2D map on paths
 \newcommand{\aptwofunc}[1]{\ensuremath{\mathsf{ap}^2_{#1}}\xspace}
-\newcommand{\aptwo}[2]{\ensuremath{{#1}\mathopen{}\left({#2}\right)\mathclose{}}\xspace}
+\newcommand{\aptwo}[2]{\ensuremath{\aptwofunc{#1}\mathopen{}\left({#2}\right)\mathclose{}}\xspace}
 \newcommand{\apdtwofunc}[1]{\ensuremath{\mathsf{apd}^2_{#1}}\xspace}
 \newcommand{\apdtwo}[2]{\ensuremath{\apdtwofunc{#1}\mathopen{}\left(#2\right)\mathclose{}}\xspace}
 
@@ -258,9 +288,14 @@
 %%% Homotopies (written infix) %%%
 \newcommand{\htpy}{\sim}
 
+%%% Other meanings of \sim
+\newcommand{\bisim}{\sim}       % bisimulation
+\newcommand{\eqr}{\sim}         % an equivalence relation
+
 %%% Equivalence types %%%
 \newcommand{\eqv}[2]{\ensuremath{#1 \simeq #2}\xspace}
 \newcommand{\eqvspaced}[2]{\ensuremath{#1 \;\simeq\; #2}\xspace}
+\newcommand{\eqvsym}{\simeq}    % infix symbol
 \newcommand{\texteqv}[2]{\ensuremath{\mathsf{Equiv}(#1,#2)}\xspace}
 \newcommand{\isequiv}{\ensuremath{\mathsf{isequiv}}}
 \newcommand{\qinv}{\ensuremath{\mathsf{qinv}}}
@@ -302,8 +337,9 @@
 \newcommand{\ordsl}[2]{{#1}_{/#2}}
 
 %%% Univalence
-\newcommand{\ua}{\ensuremath{\mathsf{ua}}\xspace}
+\newcommand{\ua}{\ensuremath{\mathsf{ua}}\xspace} % the inverse of idtoeqv
 \newcommand{\idtoeqv}{\ensuremath{\mathsf{idtoeqv}}\xspace}
+\newcommand{\univalence}{\ensuremath{\mathsf{univalence}}\xspace} % the full axiom
 
 %%% Truncation levels
 \newcommand{\iscontr}{\ensuremath{\mathsf{isContr}}}
@@ -311,8 +347,8 @@
 \newcommand{\isset}{\ensuremath{\mathsf{isSet}}}
 \newcommand{\isprop}{\ensuremath{\mathsf{isProp}}}
 % h-propositions
-\newcommand{\anhprop}{a mere proposition\xspace}
-\newcommand{\hprops}{mere propositions\xspace}
+% \newcommand{\anhprop}{a mere proposition\xspace}
+% \newcommand{\hprops}{mere propositions\xspace}
 
 %%% Homotopy fibers %%%
 %\newcommand{\hfiber}[2]{\ensuremath{\mathsf{hFiber}(#1,#2)}\xspace}
@@ -324,12 +360,13 @@
 % \newcommand{\trunc}[2]{\tau_{#1}(#2)}
 % \newcommand{\Trunc}[2]{\tau_{#1}\Big(#2\Big)}
 % \newcommand{\truncf}[1]{\tau_{#1}}
-\newcommand{\trunc}[2]{\left\Vert #2\right\Vert_{#1}}
-\newcommand{\ttrunc}[2]{\big\Vert #2\big\Vert_{#1}}
-\newcommand{\Trunc}[2]{\Big\Vert #2\Big\Vert_{#1}}
-\newcommand{\truncf}[1]{\Vert -\Vert_{#1}}
-\newcommand{\tproj}[3][]{\left|#3\right|_{#2}^{#1}}
-\newcommand{\tprojf}[1]{|-|_{#1}}
+%\newcommand{\trunc}[2]{\Vert #2\Vert_{#1}}
+\newcommand{\trunc}[2]{\mathopen{}\left\Vert #2\right\Vert_{#1}\mathclose{}}
+\newcommand{\ttrunc}[2]{\bigl\Vert #2\bigr\Vert_{#1}}
+\newcommand{\Trunc}[2]{\Bigl\Vert #2\Bigr\Vert_{#1}}
+\newcommand{\truncf}[1]{\Vert \blank \Vert_{#1}}
+\newcommand{\tproj}[3][]{\mathopen{}\left|#3\right|_{#2}^{#1}\mathclose{}}
+\newcommand{\tprojf}[2][]{|\blank|_{#2}^{#1}}
 \def\pizero{\trunc0}
 %\newcommand{\brck}[1]{\trunc{-1}{#1}}
 %\newcommand{\Brck}[1]{\Trunc{-1}{#1}}
@@ -342,8 +379,11 @@
 \newcommand{\bproj}[1]{\tproj{}{#1}}
 \newcommand{\bprojf}{\tprojf{}}
 
+% Big parentheses
+\newcommand{\Parens}[1]{\Bigl(#1\Bigr)}
+
 % Projection and extension for truncations
-\newcommand{\extendsmb}{\mathsf{ext}}
+\let\extendsmb\ext
 \newcommand{\extend}[1]{\extendsmb(#1)}
 
 %
@@ -375,6 +415,11 @@
 %%% Glue of a pushout
 \newcommand{\glue}{\mathsf{glue}}
 
+%%% Colimits
+\newcommand{\colim}{\mathsf{colim}}
+\newcommand{\inc}{\mathsf{inc}}
+\newcommand{\cmp}{\mathsf{cmp}}
+
 %%% Circles and spheres
 \newcommand{\Sn}{\mathbb{S}}
 \newcommand{\base}{\ensuremath{\mathsf{base}}\xspace}
@@ -387,14 +432,15 @@
 \newcommand{\south}{\mathsf{S}}
 \newcommand{\merid}{\mathsf{merid}}
 
-%%% Blanks (i.e. anonymous lambdas)
-\newcommand{\blank}{\mathord{\underline{\hspace{1ex}}}}
-%\newcommand{\blank}{(-)}
-%\newcommand{\blank}{(?)}
+%%% Blanks (shorthand for lambda abstractions)
+\newcommand{\blank}{\mathord{\hspace{1pt}\text{--}\hspace{1pt}}}
+
+%%% Nameless objects
+\newcommand{\nameless}{\mathord{\hspace{1pt}\underline{\hspace{1ex}}\hspace{1pt}}}
 
 %%% Some decorations
 %\newcommand{\bbU}{\ensuremath{\mathbb{U}}\xspace}
-\newcommand{\bbB}{\ensuremath{\mathbb{B}}\xspace}
+% \newcommand{\bbB}{\ensuremath{\mathbb{B}}\xspace}
 \newcommand{\bbP}{\ensuremath{\mathbb{P}}\xspace}
 
 %%% Some categories
@@ -413,10 +459,12 @@
 \newcommand{\inv}[1]{{#1}^{-1}}
 \newcommand{\idtoiso}{\ensuremath{\mathsf{idtoiso}}\xspace}
 \newcommand{\isotoid}{\ensuremath{\mathsf{isotoid}}\xspace}
-\newcommand{\op}{^{\textrm{op}}}
+\newcommand{\op}{^{\mathrm{op}}}
 \newcommand{\y}{\ensuremath{\mathbf{y}}\xspace}
 \newcommand{\dgr}[1]{{#1}^{\dagger}}
 \newcommand{\unitaryiso}{\mathrel{\cong^\dagger}}
+\newcommand{\cteqv}[2]{\ensuremath{#1 \simeq #2}\xspace}
+\newcommand{\cteqvsym}{\simeq}     % Symbol for equivalence of categories
 
 %%% Natural numbers
 \newcommand{\N}{\ensuremath{\mathbb{N}}\xspace}
@@ -429,8 +477,8 @@
 \newcommand{\sucp}{\ensuremath{\suc'}\xspace} % alternative suc in induction chapter
 \newcommand{\add}{\mathsf{add}}
 \newcommand{\ack}{\mathsf{ack}}
-\newcommand{\ass}{\mathsf{ass}}
 \newcommand{\ite}{\mathsf{iter}}
+\newcommand{\assoc}{\mathsf{assoc}}
 \newcommand{\dbl}{\ensuremath{\mathsf{double}}}
 \newcommand{\dblp}{\ensuremath{\dbl'}\xspace} % alternative double in induction chapter
 
@@ -439,6 +487,7 @@
 \newcommand{\lst}[1]{\mathsf{List}(#1)}
 \newcommand{\nil}{\mathsf{nil}}
 \newcommand{\cons}{\mathsf{cons}}
+\newcommand{\lost}[1]{\mathsf{Lost}(#1)}
 
 %%% Vectors of given length, used in induction chapter
 \newcommand{\vect}[2]{\ensuremath{\mathsf{Vec}_{#1}(#2)}\xspace}
@@ -456,7 +505,7 @@
 \newcommand{\happly}{\mathsf{happly}}
 
 %%% A naturality lemma
-\newcommand{\com}[3]{\mathtt{swap}_{#1,#2}(#3)}
+\newcommand{\com}[3]{\mathsf{swap}_{#1,#2}(#3)}
 
 %%% Code/encode/decode
 \newcommand{\code}{\ensuremath{\mathsf{code}}\xspace}
@@ -468,8 +517,8 @@
       \longrightarrow & #2 \\ #3 & \longmapsto & #4 \end{array}\right.}
 
 %%% Cones and cocones
-\newcommand{\cone}[2]{\mathrm{cone}_{#1}(#2)}
-\newcommand{\cocone}[2]{\mathrm{cocone}_{#1}(#2)}
+\newcommand{\cone}[2]{\mathsf{cone}_{#1}(#2)}
+\newcommand{\cocone}[2]{\mathsf{cocone}_{#1}(#2)}
 % Apply a function to a cocone
 \newcommand{\composecocone}[2]{#1\circ#2}
 \newcommand{\composecone}[2]{#2\circ#1}
@@ -492,6 +541,7 @@
 \newcommand{\bin}{\ensuremath{\mathrel{\widetilde{\in}}}}
 
 %%% Semigroup structure
+\newcommand{\semigroupstrsym}{\ensuremath{\mathsf{SemigroupStr}}}
 \newcommand{\semigroupstr}[1]{\ensuremath{\mathsf{SemigroupStr}}(#1)}
 \newcommand{\semigroup}[0]{\ensuremath{\mathsf{Semigroup}}}
 
@@ -500,17 +550,18 @@
 \newcommand{\production}{\vcentcolon\vcentcolon=}
 \newcommand{\conv}{\downarrow}
 \newcommand{\ctx}{\ensuremath{\mathsf{ctx}}}
-\newcommand{\wfctx}[1]{\vdash #1\ \ctx}
+\newcommand{\wfctx}[1]{#1\ \ctx}
 \newcommand{\oftp}[3]{#1 \vdash #2 : #3}
 \newcommand{\jdeqtp}[4]{#1 \vdash #2 \jdeq #3 : #4}
 \newcommand{\judg}[2]{#1 \vdash #2}
 \newcommand{\tmtp}[2]{#1 \mathord{:} #2}
 
 % rule names
-\newcommand{\form}{\textsc{form}}
-\newcommand{\intro}{\textsc{intro}}
-\newcommand{\elim}{\textsc{elim}}
-\newcommand{\comp}{\textsc{comp}}
+\newcommand{\rform}{\textsc{form}}
+\newcommand{\rintro}{\textsc{intro}}
+\newcommand{\relim}{\textsc{elim}}
+\newcommand{\rcomp}{\textsc{comp}}
+\newcommand{\runiq}{\textsc{uniq}}
 \newcommand{\Weak}{\mathsf{Wkg}}
 \newcommand{\Vble}{\mathsf{Vble}}
 \newcommand{\Exch}{\mathsf{Exch}}
@@ -527,7 +578,7 @@
 \newcommand{\istype}[1]{\mathsf{is}\mbox{-}{#1}\mbox{-}\mathsf{type}}
 \newcommand{\nplusone}{\ensuremath{(n+1)}}
 \newcommand{\nminusone}{\ensuremath{(n-1)}}
-\newcommand{\fact}{\textsf{fact}}
+\newcommand{\fact}{\mathsf{fact}}
 
 %%% Macros for homotopy
 \newcommand{\kbar}{\overline{k}} % Used in van Kampen's theorem
@@ -535,7 +586,7 @@
 %%% Macros for induction
 \newcommand{\natw}{\ensuremath{\mathbf{N^w}}\xspace}
 \newcommand{\zerow}{\ensuremath{0^\mathbf{w}}\xspace}
-\newcommand{\sucw}{\ensuremath{\mathbf{s^w}}\xspace}
+\newcommand{\sucw}{\ensuremath{\mathsf{succ}^{\mathbf{w}}}\xspace}
 \newcommand{\nalg}{\nat\mathsf{Alg}}
 \newcommand{\nhom}{\nat\mathsf{Hom}}
 \newcommand{\ishinitw}{\mathsf{isHinit}_{\mathsf{W}}}
@@ -547,9 +598,11 @@
 %%% Macros for real numbers
 \newcommand{\RC}{\ensuremath{\mathbb{R}_\mathsf{c}}\xspace} % Cauchy
 \newcommand{\RD}{\ensuremath{\mathbb{R}_\mathsf{d}}\xspace} % Dedekind
-\newcommand{\R}{\ensuremath{\mathbb{R}}\xspace}           % Either 
+\newcommand{\R}{\ensuremath{\mathbb{R}}\xspace}           % Either
 \newcommand{\barRD}{\ensuremath{\bar{\mathbb{R}}_\mathsf{d}}\xspace} % Dedekind completion of Dedekind
 
+\newcommand{\close}[1]{\sim_{#1}} % Relation of closeness
+\newcommand{\closesym}{\mathord\sim}
 \newcommand{\rclim}{\mathsf{lim}} % HIT constructor for Cauchy reals
 \newcommand{\rcrat}{\mathsf{rat}} % Embedding of rationals into Cauchy reals
 \newcommand{\rceq}{\mathsf{eq}_{\RC}} % HIT path constructor
@@ -578,6 +631,7 @@
 \newcommand{\surr}[2]{\{\,#1\,\big|\,#2\,\}}
 \newcommand{\LL}{\mathcal{L}}
 \newcommand{\RR}{\mathcal{R}}
+\newcommand{\noeq}{\mathsf{eq}_{\NO}} % HIT path constructor
 
 \newcommand{\ble}{\trianglelefteqslant}
 \newcommand{\blt}{\vartriangleleft}
@@ -603,19 +657,21 @@
 
 %%% Macros for set theory
 \newcommand{\vset}{\mathsf{set}}  % point constructor for cummulative hierarchy V
-\newcommand{\cd}[1]{\left|#1\right|} % cardinality of a set
+\def\cd{\tproj0}
 \newcommand{\inj}{\ensuremath{\mathsf{inj}}} % type of injections
 \newcommand{\acc}{\ensuremath{\mathsf{acc}}} % accessibility
 
 \newcommand{\atMostOne}{\mathsf{atMostOne}}
 
+\newcommand{\power}[1]{\mathcal{P}(#1)} % power set
+\newcommand{\powerp}[1]{\mathcal{P}_+(#1)} % inhabited power set
 
 %%%% THEOREM ENVIRONMENTS %%%%
 
-% Hyperref includes the command \autoref{...} which is like \ref{...}
+% The cleveref package provides \cref{...} which is like \ref{...}
 % except that it automatically inserts the type of the thing you're
 % referring to, e.g. it produces "Theorem 3.8" instead of just "3.8"
-% (and makes the whole thing a hyperlink).  This saves a slight amount
+% (and hyperref makes the whole thing a hyperlink).  This saves a slight amount
 % of typing, but more importantly it means that if you decide later on
 % that 3.8 should be a Lemma or a Definition instead of a Theorem, you
 % don't have to change the name in all the places you referred to it.
@@ -632,7 +688,8 @@
   \newtheorem{#1}[#1]{#2}
   \aliascntresetthe{#1}
   %% This command tells cleveref's \cref what to call things
-  \crefname{#1}{#2}{#3}}
+  \crefname{#1}{#2}{#3}% following brace must be on separate line to support poorman cleveref sed file
+}
 
 % Now define a bunch of theorem-type environments.
 \newtheorem{thm}{Theorem}[section]
@@ -682,10 +739,6 @@
 % Display format for figures
 \crefname{figure}{Figure}{Figures}
 
-% Use cleveref instead of hyperref's \autoref
-\let\autoref\cref
-
-
 %%%% EQUATION NUMBERING %%%%
 
 % The following hack uses the single theorem counter to number
@@ -719,9 +772,31 @@
 \gdef\notesoff{\gdef\note##1{\null}}
 \noteson
 
+\newcommand{\Coq}{\textsc{Coq}\xspace}
+\newcommand{\Agda}{\textsc{Agda}\xspace}
+\newcommand{\NuPRL}{\textsc{NuPRL}\xspace}
+
 %%%% CITATIONS %%%%
 
-\let \cite \citep
+% \let \cite \citep
+
+%%%% INDEX %%%%
+
+\newcommand{\footstyle}[1]{{\hyperpage{#1}}n} % If you index something that is in a footnote
+\newcommand{\defstyle}[1]{\textbf{\hyperpage{#1}}}  % Style for pageref to a definition
+
+\newcommand{\indexdef}[1]{\index{#1|defstyle}}   % Index a definition
+\newcommand{\indexfoot}[1]{\index{#1|footstyle}} % Index a term in a footnote
+\newcommand{\indexsee}[2]{\index{#1|see{#2}}}    % Index "see also"
+
+
+%%%% Standard phrasing or spelling of common phrases %%%%
+
+\newcommand{\ZF}{Zermelo--Fraenkel}
+\newcommand{\CZF}{Constructive \ZF{} Set Theory}
+
+\newcommand{\LEM}[1]{\ensuremath{\mathsf{LEM}_{#1}}\xspace}
+\newcommand{\choice}[1]{\ensuremath{\mathsf{AC}_{#1}}\xspace}
 
 %%%% MISC %%%%
 
@@ -733,5 +808,5 @@
 
 % Local Variables:
 % mode: latex
-% TeX-master: "main"
+% TeX-master: "hott-online"
 % End:

@@ -1,69 +1,50 @@
-% This is the main LaTeX file for the HoTT book.
+% THIS IS NOT THE FILE YOU SHOULD PROCESS. IT IS THE "MAIN" FILE,
+% BUT IT GETS INCLUDED BY ONE OF THE hott-xxx.tex FILES. THOSE ARE
+% THE MAIN ONES.
 
-% This file supports two book sizes:
-% - Letter size (8.5" x 11")
-% - US Trade size (6" x 9")
-%
-% To activate one or the other, uncomment the appropriate font size in
-% the documentclass below, and then one of the two page geometry incantations
-%
-% NOTE: The 6" x 9" format is only experimental. It will break the
-% title page, for example.
+% DOCUMENT CLASS
+\documentclass[\OPTfontsize]{book}
 
 \PassOptionsToPackage{table}{xcolor}
 
-% DOCUMENT CLASS
-\documentclass[
-%
-%10pt % for US Trade 6" x 9" book
-%
-11pt % for Letter size book
-]{book}
 \usepackage{etex} % We're running out of registers and dimensions, or some such
 
 % PAGE GEOMETRY
-%
-% Uncomment one of these
-
-% We make the page 40pt taller than the standard LaTeX book.
-
-% OPTION 1: Letter
-\usepackage[papersize={8.5in,11in},
+\usepackage[papersize={\OPTpagesize},
             twoside,
             includehead,
-            top=1in,
-            bottom=1in,
-            inner=0.75in,
-            outer=1.0in,
-            bindingoffset=0.35in]{geometry}
-
-% OPTION 2: US Trade
-% \usepackage[papersize={6in,9in},
-%             twoside,
-%             includehead,
-%             top=0.75in,
-%             bottom=0.75in,
-%             inner=0.5in,
-%             outer=0.75in,
-%             bindingoffset=0.35in]{geometry}
+            top=\OPTtopmargin,
+            bottom=\OPTbottommargin,
+            inner=\OPTinnermargin,
+            outer=\OPToutermargin,
+            bindingoffset=\OPTbindingoffset]{geometry}
 
 % HYPERLINKING AND PDF METADATA
-
-\usepackage[pagebackref,
+\usepackage[backref=page,
             colorlinks,
-            citecolor=darkgreen,
-            linkcolor=darkgreen,
+            citecolor=linkcolor,
+            linkcolor=linkcolor,
+            urlcolor=linkcolor,
             unicode,
             pdfauthor={Univalent Foundations Program},
             pdftitle={Homotopy Type Theory: Univalent Foundations of Mathematics},
             pdfsubject={Mathematics},
             pdfkeywords={type theory, homotopy theory, univalence axiom}]{hyperref}
+\renewcommand{\backref}[1]{}
+\renewcommand{\backrefalt}[4]{%
+   \ifcase #1 %
+   (No citations.)
+   \or
+   (Cited on page\ #2.)
+   \else
+   (Cited on pages\ #2.)
+   \fi}
 
 % OTHER PACKAGES
 
 % Use this package and stick \layout somewhere in the text to see
 % page margins, text size and width etc. Useful for debugging page format.
-%\usepackage{layout}
+\usepackage{layout}
 
 %%% Because Germans have umlauts and Slavs have even stranger ways of mangling letters
 \usepackage[utf8]{inputenc}
@@ -80,10 +61,12 @@
 \usepackage{courier}
 \linespread{1.05} % Palatino looks better with this
 
-\usepackage{graphicx}
-\usepackage{comment}
+\usepackage{ifpdf}
 
-\usepackage{wallpaper} % For the background image on the cover page
+\usepackage{graphicx}
+\DeclareGraphicsExtensions{.png}
+\input{bmpsize-hack} % for bounding boxes in dvi mode
+\usepackage{comment}
 
 \usepackage{fancyhdr} % To set headers and footers
 
@@ -91,19 +74,24 @@
 
 \usepackage{amssymb,amsmath,amsthm,stmaryrd,mathrsfs,wasysym}
 \usepackage{enumitem,mathtools,xspace}
+\usepackage{xstring} % For generating singluars and plurals in \backref
+
 \usepackage{xcolor} % For colored cells in tables we need \cellcolor
+\usepackage{wallpaper} % For the background image on the cover page
+
 \usepackage{booktabs} % For nice tables
 \usepackage{array} % For nice tables
-\usepackage{supertabular} % For index of symbols
-\definecolor{darkgreen}{rgb}{0,0.45,0}
+
+\definecolor{linkcolor}{rgb}{\OPTlinkcolor}
 \usepackage{aliascnt}
 \usepackage[capitalize]{cleveref}
-\usepackage[all,2cell]{xy}
+\usepackage[all,2cell,cmtip]{xy}
 \UseAllTwocells
-\usepackage{natbib}
+%\usepackage{natbib}
 \usepackage{braket} % used for \setof{ ... } macro
+
 \usepackage{tikz}
-\usetikzlibrary{decorations.pathmorphing}
+\usetikzlibrary{decorations.pathmorphing,arrows}
 
 \usepackage{etoolbox}           % hacking commands for TOC
 
@@ -127,19 +115,28 @@
       {\fancyplain{}{\nouppercase{\rightmark}}}
 \rhead[\fancyplain{}{\nouppercase{\leftmark}}]%
       {\fancyplain{}{\thepage}}
-\cfoot{\textsc{\scriptsize \textcolor{gray}{[Draft of \today]}}}
+\cfoot[]{}
 \lfoot[]{}
 \rfoot[]{}
 
 %%%% Chapter & part style
-\usepackage{titlesec}
-\titleformat{\part}[display]{\fontsize{40}{40}\fontseries{m}\fontshape{sc}\selectfont}{\hfil\partname\ \Roman{part}}{20pt}{\fontsize{60}{60}\fontseries{b}\fontshape{sc}\selectfont\hfil}
-\titleformat{\chapter}[display]{\fontsize{23}{25}\fontseries{m}\fontshape{it}\selectfont}{\chaptertitlename\ \thechapter}{20pt}{\fontsize{35}{35}\fontseries{b}\fontshape{n}\selectfont}
+\usepackage[raggedright]{titlesec}
+\titleformat{\part}[display]{\fontsize{\OPTpartfont}{\OPTpartfont}\fontseries{m}\fontshape{sc}\selectfont}{\hfil\partname\ \Roman{part}}{\OPTpartskip}{\fontsize{\OPTparttitlefont}{\OPTparttitlefont}\fontseries{b}\fontshape{sc}\selectfont\hfil}
+\titleformat{\chapter}[display]{\fontsize{\OPTchapterfont}{\OPTchapterfont}\fontseries{m}\fontshape{it}\selectfont}{\chaptertitlename\ \thechapter}{\OPTchapterskip}{\fontsize{\OPTchaptertitlefont}{\OPTchaptertitlefont}\fontseries{b}\fontshape{n}\selectfont}
 
 % To avoid compiling stuff other than what you're working on right
 % now, uncomment the following command and give your file as its
 % argument.
 %\includeonly{}
+
+% For some reason \pagecolor overlays the cover image,
+% unless we use it once before the document starts.
+\definecolor{covercolor}{cmyk}{\OPTcovercolor}
+\definecolor{covertext}{cmyk}{\OPTcovertextcolor}
+\pagecolor{white}
+\ifpdf
+\nopagecolor
+\fi
 
 \begin{document}
 
@@ -151,7 +148,7 @@
 
 \frontmatter % Turn on arabic page numbers and unnumbered chapters
 
-% Title page, preface and TOC do not have headers and footers
+% Half-title, title, copyright page do not have displayed page numbers
 \pagestyle{empty}
 
 \include{front} %%% Title page and copyright
@@ -162,9 +159,12 @@
 \hypertarget{preface}{}
 \bookmark[dest=preface]{Preface}
 
+% Preface and TOC have arabic numbers
+\pagestyle{fancyplain}
+
 \include{preface}
 
-\cleartooddpage
+\cleartooddpage[\thispagestyle{empty}]
 
 % Add TOC to PDF Metadata but not printed TOC
 \hypertarget{toc}{}
@@ -174,7 +174,7 @@
 \tableofcontents
 \setcounter{tocdepth}{2}        % chapters, sections, and subsections for the
                                 % metadata of the pdf
-\cleartooddpage
+\cleartooddpage[\thispagestyle{empty}]
 
 \mainmatter % Turn on roman page numbers and numbered chapters
 
@@ -200,7 +200,7 @@
 
 \include{hlevels}
 
-\cleartooddpage % Needed for correct TOC
+\cleartooddpage[\thispagestyle{empty}] % Needed for correct TOC
 \part{Mathematics}
 \label{part:mathematics}
 
@@ -214,7 +214,7 @@
 
 %%%% Appendix
 
-\cleartooddpage % Needed for correct TOC
+\cleartooddpage[\thispagestyle{empty}] % Needed for correct TOC
 \phantomsection % Needed for correct TOC also
 \part*{Appendix}
 
@@ -227,36 +227,91 @@
 
 \include{formal}
 
+% Joke
+\nocite{Angiuli13}
+\nocite{BauerAcceptanceVideo}
+
 %%%% Bibliography
+\bibliographystyle{halpha}
 \phantomsection % black magic to get TOC to point to correct page
 \addcontentsline{toc}{part}{\bibname}
-\bibliographystyle{alpha}
 \markboth{}{\textsc{Bibliography}}
-\renewcommand{\markboth}[2]{}
-\bibliography{references}
+{\renewcommand{\markboth}[2]{} % Prevent bibliography from resetting the header to something silly
+\OPTbibliographyfont
+\bibliography{references}}
 
-\cleartooddpage
+\cleartooddpage[\thispagestyle{empty}]
 
 %%%% Index of symbols
 
 \include{symbols}
 
-\cleartooddpage
+\cleartooddpage[\thispagestyle{empty}]
 
 %%%%% Index of terms
+
+%% Global cross-references for index
+\indexsee{principle}{axiom}
+\indexsee{number!real}{real numbers}
+\indexsee{abelian group}{group, abelian}
+\indexsee{sequence!Cauchy}{Cauchy sequence}
+\indexsee{adjunction}{adjoint functor}
+\indexsee{higher topos}{$(\infty,1)$-topos}
+\indexsee{topos!higher}{$(\infty,1)$-topos}
+\indexsee{source!of a function}{domain}
+\indexsee{target!of a function}{codomain}
+\indexsee{type!truncation of}{truncation}
+\indexsee{propositional!truncation}{truncation}
+\indexsee{proof-relevant mathematics}{mathematics, proof-relevant}
+\indexsee{classical!mathematics}{mathematics, classical}
+\indexsee{classical!logic}{logic}
+\indexsee{constructive!mathematics}{mathematics, constructive}
+\indexsee{constructive!logic}{logic}
+\indexsee{intuitionistic logic}{logic}
+\indexsee{definition!inductive}{type, inductive}
+\indexsee{inductive!definition}{type, inductive}
+\indexsee{bounded!totally}{totally bounded}
+\indexsee{sum!of numbers}{addition}
+\indexsee{continuous map}{function, continuous}
+\indexsee{function!continuity of@``continuity'' of}{``continuity''}
+\indexsee{function!functoriality of@``functoriality'' of}{``functoriality''}
+\indexsee{codes}{encode-decode method}
+\indexsee{inequality}{order}
+\indexsee{Coq@\Coq}{proof assistant}
+\indexsee{Agda@\Agda}{proof assistant}
+\indexsee{NuPRL@\NuPRL}{proof assistant}
+\indexsee{generator!of an inductive type}{constructor}
+\indexsee{groupoid!.infinity-@$\infty$-}{$\infty$-groupoid}
+\indexsee{higher groupoid}{$\infty$-groupoid}
+\indexsee{hierarchy!of n-types@of $n$-types}{$n$-type}
+\indexsee{homotopy!n-type@$n$-type}{$n$-type}
+\indexsee{homotopy!theory, classical}{classical homotopy theory}
+\indexsee{homotopy!fiber}{fiber}
+\indexsee{homotopy!limit}{limit of types}
+\indexsee{homotopy!colimit}{colimit of types}
+\indexsee{implementation}{proof assistant}
+\indexsee{notation, abuse of}{abuse of notation}
+\indexsee{language, abuse of}{abuse of language}
+\indexsee{operator!induction}{induction principle}
+\indexsee{operator!modal}{modality}
+\indexsee{commutative!group}{group, abelian}
+\indexsee{countable axiom of choice}{axiom of choice, countable}
+
 % tell the index to get itself into the table of contents
 \phantomsection % black magic to get TOC to point to correct page
+\addcontentsline{toc}{part}{Index}
 \markboth{}{\textsc{Index}}
 \renewcommand{\markboth}[2]{}
-\addcontentsline{toc}{part}{Index}
-\printindex
+{\OPTindexfont
+\setlength{\columnsep}{\OPTindexcolumnsep}
+\printindex}
 
 % The back cover
 \include{back}
 
 \end{document}
 
-%%% Local Variables: 
+%%% Local Variables:
 %%% mode: latex
-%%% TeX-master: t
-%%% End: 
+%%% TeX-master: "hott-online"
+%%% End:
