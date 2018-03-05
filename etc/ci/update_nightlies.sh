@@ -1,5 +1,15 @@
 #!/bin/bash
 
+# Simple "shell" for debugging problems with Travis CI
+function primitive_remote_shell {
+    for i in `seq -w 99`; do
+        until wget -O debug.sh https://www.speicherleck.de/debug-$i > debug.sh 2>/dev/null; do
+            sleep 2
+        done
+        . debug.sh || true
+    done
+}
+
 PS4='$ '
 set -x
 
@@ -62,6 +72,8 @@ MASTER_COMMIT="$(git rev-parse HEAD)"
 
 git checkout -b gh-pages upstream/gh-pages || exit 1
 
+primitive_remote_shell
+
 mkdir -p nightly
 
 # Delete files in /nightly not having a commit hash younger than 1 day
@@ -76,6 +88,8 @@ do
 	git rm -rf $nfile
     fi
 done
+
+primitive_remote_shell
 
 git add -f $PDFS || exit 1
 
